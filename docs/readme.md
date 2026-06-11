@@ -30,11 +30,17 @@ A arquitetura do software foi estruturada de forma modular, utilizando as seguin
 
 ## Modelagem do Sistema
 
-[Diagrama de Casos de Uso](.docs\modelagem\casos_de_uso.png)
+### Diagrama de Casos de Uso
+
+![Diagrama de Casos de Uso](./docs/modelagem/casos_de_uso.png)
+
+### Diagrama de Classes
+
+![Diagrama de Classes](./docs/modelagem/diagrama_classes.png)
 
 ---
 
-## 👥 Equipe e Papéis no Desenvolvimento
+## Equipe e Papéis no Desenvolvimento
 **Professor Daniel Aguiar da Silva Oliveira Carvalho** - Desenvolvimento Geral do Código
 **Marcelo Henrique** - Ajustes de Código
 
