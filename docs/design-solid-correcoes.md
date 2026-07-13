@@ -7,7 +7,7 @@ Este documento detalha as refatorações arquiteturais realizadas no backend do 
 ## 1. Violação do SRP (Single Responsibility Principle)
 > *"Uma classe deve ter um, e apenas um, motivo para mudar."*
 
-A classe MusicaControlador possui duas responsabilidades que são orquestrar as regras de negócio da música e atuar como um banco de dados em memória para armazenar os dados no ArrayList<Musica>. Qualquer mudança na forma de armazenamento, como por exemplo mudar para um banco de dados SQL, forçaria uma modificação na classe de controle.
+MusicaControlador está violando o Princípio da Responsabilidade Única. Ela é responsável tanto pela lógica de negócios quanto por salvar os dados em um ArrayList. Se o armazenamento mudar para SQL, a classe precisará ser modificada
 
 ### Código Violado
 ```java
@@ -33,7 +33,6 @@ classDiagram
 ### Código Corrigido
 A responsabilidade de manipulação e armazenamento dos dados foi isolada em uma nova classe chamada `MusicaRepository`.
 ```java
-// Persistência
 public class MusicaRepository {
     private ArrayList<Musica> todasAsMusicas = new ArrayList<>();
 
@@ -42,7 +41,6 @@ public class MusicaRepository {
     }
 }
 
-// Controlador
 public class MusicaControlador {
     private MusicaRepository repositorio;
 
@@ -76,7 +74,7 @@ classDiagram
 ## 2. Violação do OCP (Open/Closed Principle)
 >*"Entidades de software devem estar abertas para extensão, mas fechadas para modificação."*
 
-O método `rodar()` da classe `TsfyUI` utilizava uma estrutura condicional switch/case para gerenciar as opções do menu do sistema. forçando toda nova modificação exige modificar esse arquivo
+Como o método rodar() da classe TsfyUI dependia de um switch/case para controlar o menu, qualquer nova opção exigia alterar esse arquivo, violando o Princípio do SOLID.
 
 ### Código Violado
 ```java
@@ -151,4 +149,73 @@ classDiagram
     }
     TsfyUI --> ComandoUI
     ComandoUI <|.. ComandoCriarMusica
+```
+---
+
+## 3. Violação do DIP (Dependency Inversion Principle)
+>*"Dependa de abstrações, não de implementações concretas."*
+
+Antes, a classe FachadaFrontend dependia muito de outras classes porque criava os objetos diretamente usando o 'new' no seu construtor.
+
+### Código Violado
+```java
+public class FachadaFrontend {
+    private MusicaControlador controladorDeMusica;
+
+    public FachadaFrontend(){
+        // VIOLAÇÃO: Alto nível instanciando componentes concretos de baixo nível
+        this.controladorDeMusica = new MusicaControlador();
+    }
+}
+```
+
+#### Diagrama de classes violado
+```mermaid
+classDiagram
+    class FachadaFrontend {
+        -MusicaControlador controladorDeMusica
+        +FachadaFrontend()
+    }
+    class MusicaControlador {
+        +registrarMusica() boolean
+    }
+    FachadaFrontend --> MusicaControlador : instancia diretamente
+```
+
+### Código Corrigido
+A interface (IMusicaControlador) foi adicionada para isolar a complexidade. Além disso, a fachada passou a adotar a Injeção de Dependência, recebendo a dependência instanciada via construtor.
+
+```java
+public interface IMusicaControlador {
+    boolean registrarMusica(String titulo, String compositor, String interprete, Double duracao);
+}
+
+public class MusicaControlador implements IMusicaControlador {
+}
+
+public class FachadaFrontend {
+    private IMusicaControlador controladorDeMusica;
+
+    public FachadaFrontend(IMusicaControlador controladorDeMusica) {
+        this.controladorDeMusica = controladorDeMusica;
+    }
+}
+```
+
+#### Diagrama de Classes Corrigido
+```mermaid
+classDiagram
+    class IMusicaControlador {
+        <<interface>>
+        +registrarMusica() boolean
+    }
+    class FachadaFrontend {
+        -IMusicaControlador controladorDeMusica
+        +FachadaFrontend(IMusicaControlador)
+    }
+    class MusicaControlador {
+        +registrarMusica() boolean
+    }
+    FachadaFrontend --> IMusicaControlador
+    IMusicaControlador <|.. MusicaControlador
 ```
