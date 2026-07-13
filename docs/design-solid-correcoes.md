@@ -5,6 +5,8 @@ Este documento detalha as refatorações arquiteturais realizadas no backend do 
 ---
 
 ## 1. Violação do SRP (Single Responsibility Principle)
+> *"Uma classe deve ter um, e apenas um, motivo para mudar."*
+
 A classe MusicaControlador possui duas responsabilidades que são orquestrar as regras de negócio da música e atuar como um banco de dados em memória para armazenar os dados no ArrayList<Musica>. Qualquer mudança na forma de armazenamento, como por exemplo mudar para um banco de dados SQL, forçaria uma modificação na classe de controle.
 
 ### Código Violado
@@ -28,10 +30,8 @@ classDiagram
     }
 ```
 
----
 ### Código Corrigido
 A responsabilidade de manipulação e armazenamento dos dados foi isolada em uma nova classe chamada `MusicaRepository`.
-
 ```java
 // Persistência
 public class MusicaRepository {
@@ -70,4 +70,85 @@ classDiagram
         +registrarMusica(String, String, String, Double) boolean
     }
     MusicaControlador --> MusicaRepository
+```
+---
+
+## 2. Violação do OCP (Open/Closed Principle)
+>*"Entidades de software devem estar abertas para extensão, mas fechadas para modificação."*
+
+O método `rodar()` da classe `TsfyUI` utilizava uma estrutura condicional switch/case para gerenciar as opções do menu do sistema. forçando toda nova modificação exige modificar esse arquivo
+
+### Código Violado
+```java
+public class TsfyUI {
+    public void rodar() {
+        switch (op) {
+            case 1: criarNovoUsuario(); break;
+            case 2: fazerLogin(); break;
+            case 3: criarMusica(); break;
+        }
+    }
+}
+```
+
+#### Diagrama de classes violado
+```mermaid
+classDiagram
+    class TsfyUI {
+        -Scanner sc
+        -FachadaFrontend fachada
+        +rodar() void
+        -criarMusica() void
+        -fazerLogin() void
+        -criarNovoUsuario() void
+    }
+```
+
+### Código Corrigido
+Utilização padrão de projeto **Command**. Cada opção do menu torna uma classe isolada que estende uma interface comum.
+```java
+public interface ComandoUI {
+    void executar();
+}
+
+public class ComandoCriarMusica implements ComandoUI {
+    private FachadaFrontend fachada;
+    public ComandoCriarMusica(FachadaFrontend fachada) { this.fachada = fachada; }
+    
+    @Override
+    public void executar() {
+    }
+}
+
+public class TsfyUI {
+    private Map<Integer, ComandoUI> comandos = new HashMap<>();
+
+    public TsfyUI() {
+        comandos.put(3, new ComandoCriarMusica(new FachadaFrontend()));
+    }
+
+    public void rodar() {
+        ComandoUI comando = comandos.get(op);
+        if (comando != null) {
+            comando.executar();
+        }
+    }
+}
+```
+#### Diagrama de Classes Corrigido
+```mermaid
+classDiagram
+    class ComandoUI {
+        +executar() void
+    }
+    class TsfyUI {
+        -Map~Integer, ComandoUI~ comandos
+        +rodar() void
+    }
+    class ComandoCriarMusica {
+        -FachadaFrontend fachada
+        +executar() void
+    }
+    TsfyUI --> ComandoUI
+    ComandoUI <|.. ComandoCriarMusica
 ```
