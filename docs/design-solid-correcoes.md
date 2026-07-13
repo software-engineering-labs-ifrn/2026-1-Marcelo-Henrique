@@ -7,12 +7,12 @@ Este documento detalha as refatorações arquiteturais realizadas no backend do 
 ## 1. Violação do SRP (Single Responsibility Principle)
 > *"Uma classe deve ter um, e apenas um, motivo para mudar."*
 
-MusicaControlador está violando o Princípio da Responsabilidade Única. Ela é responsável tanto pela lógica de negócios quanto por salvar os dados em um ArrayList. Se o armazenamento mudar para SQL, a classe precisará ser modificada
+A classe `MusicaControlador` está violando o Princípio da Responsabilidade Única. Ela é responsável tanto pela lógica de negócios quanto por salvar os dados em um `ArrayList`. Se o armazenamento mudar para SQL, a classe precisará ser modificada.
 
 ### Código Violado
 ```java
 public class MusicaControlador {
-    private ArrayList<Musica> todasAsMusicas = new ArrayList<>(); //aqui
+    private ArrayList<Musica> todasAsMusicas = new ArrayList<>();
 
     public boolean registrarMusica(String titulo, String compositor, String interprete, Double duracao) {
         Musica novaMusica = new Musica(titulo, compositor, interprete, duracao);
@@ -21,6 +21,7 @@ public class MusicaControlador {
     }
 }
 ```
+
 #### Diagrama de classes violado
 ```mermaid
 classDiagram
@@ -74,7 +75,7 @@ classDiagram
 ## 2. Violação do OCP (Open/Closed Principle)
 >*"Entidades de software devem estar abertas para extensão, mas fechadas para modificação."*
 
-Como o método rodar() da classe TsfyUI dependia de um switch/case para controlar o menu, qualquer nova opção exigia alterar esse arquivo, violando o Princípio do SOLID.
+Como o método `rodar()` da classe `TsfyUI` dependia de um switch/case para controlar o menu, qualquer nova opção exigia alterar esse arquivo, violando o Princípio do SOLID.
 
 ### Código Violado
 ```java
@@ -103,7 +104,7 @@ classDiagram
 ```
 
 ### Código Corrigido
-Utilização padrão de projeto **Command**. Cada opção do menu torna uma classe isolada que estende uma interface comum.
+Utilização do padrão de projeto **Command**. Cada opção do menu torna-se uma classe isolada que estende uma interface comum.
 ```java
 public interface ComandoUI {
     void executar();
@@ -111,7 +112,10 @@ public interface ComandoUI {
 
 public class ComandoCriarMusica implements ComandoUI {
     private FachadaFrontend fachada;
-    public ComandoCriarMusica(FachadaFrontend fachada) { this.fachada = fachada; }
+    
+    public ComandoCriarMusica(FachadaFrontend fachada) { 
+        this.fachada = fachada; 
+    }
     
     @Override
     public void executar() {
@@ -133,10 +137,12 @@ public class TsfyUI {
     }
 }
 ```
+
 #### Diagrama de Classes Corrigido
 ```mermaid
 classDiagram
     class ComandoUI {
+        <<interface>>
         +executar() void
     }
     class TsfyUI {
@@ -155,7 +161,7 @@ classDiagram
 ## 3. Violação do DIP (Dependency Inversion Principle)
 >*"Dependa de abstrações, não de implementações concretas."*
 
-Antes, a classe FachadaFrontend dependia muito de outras classes porque criava os objetos diretamente usando o 'new' no seu construtor.
+A classe `FachadaFrontend` dependia fortemente de implementações concretas porque criava os objetos diretamente usando a palavra-chave `new` em seu construtor.
 
 ### Código Violado
 ```java
@@ -163,7 +169,6 @@ public class FachadaFrontend {
     private MusicaControlador controladorDeMusica;
 
     public FachadaFrontend(){
-        // VIOLAÇÃO: Alto nível instanciando componentes concretos de baixo nível
         this.controladorDeMusica = new MusicaControlador();
     }
 }
@@ -183,7 +188,7 @@ classDiagram
 ```
 
 ### Código Corrigido
-A interface (IMusicaControlador) foi adicionada para isolar a complexidade. Além disso, a fachada passou a adotar a Injeção de Dependência, recebendo a dependência instanciada via construtor.
+A interface `IMusicaControlador` foi adicionada para atuar como uma abstração. Além disso, a fachada passou a adotar a Injeção de Dependência, recebendo a dependência instanciada via construtor.
 
 ```java
 public interface IMusicaControlador {
@@ -191,6 +196,10 @@ public interface IMusicaControlador {
 }
 
 public class MusicaControlador implements IMusicaControlador {
+    @Override
+    public boolean registrarMusica(String titulo, String compositor, String interprete, Double duracao) {
+        return true;
+    }
 }
 
 public class FachadaFrontend {
@@ -219,3 +228,86 @@ classDiagram
     FachadaFrontend --> IMusicaControlador
     IMusicaControlador <|.. MusicaControlador
 ```
+---
+
+## 4. Violação do LSP (Liskov Substitution Principle)
+>*"Classes derivadas devem poder ser substituídas por suas classes bases sem que o comportamento do programa seja corrompido."*
+
+Ao adicionar suporte para `Podcast`, a herança direta de `Musica` quebra o comportamento esperado do sistema, pois podcasts não possuem compositores e forçam o lançamento de exceções em métodos herdados.
+
+### Código Violado
+```java
+public class Musica {
+    private String compositor;
+    
+    public String getCompositor() { 
+        return compositor; 
+    }
+}
+
+public class Podcast extends Musica {
+    @Override
+    public String getCompositor() {
+        throw new UnsupportedOperationException("Podcasts não possuem compositores");
+    }
+}
+```
+
+#### Diagrama de classes violado
+```mermaid
+classDiagram
+    class Musica {
+        -String compositor
+        +getCompositor() String
+    }
+    class Podcast {
+        +getCompositor() String
+    }
+    Musica <|-- Podcast
+```
+
+### Código Corrigido
+Foi criada uma abstração mais genérica (`ItemDeAudio`). As classes `Musica` e `Podcast` agora herdam apenas os atributos e métodos que fazem sentido para ambas, mantendo a integridade do polimorfismo.
+
+```java
+public abstract class ItemDeAudio {
+    private String titulo;
+    private Double duracao;
+    
+    public String getTitulo() { return titulo; }
+}
+
+public class Musica extends ItemDeAudio {
+    private String compositor;
+    
+    public String getCompositor() { return compositor; }
+}
+
+public class Podcast extends ItemDeAudio {
+    private String host;
+    
+    public String getHost() { return host; }
+}
+```
+
+#### Diagrama de Classes Corrigido
+```mermaid
+classDiagram
+    class ItemDeAudio {
+        <<abstract>>
+        -String titulo
+        -Double duracao
+        +getTitulo() String
+    }
+    class Musica {
+        -String compositor
+        +getCompositor() String
+    }
+    class Podcast {
+        -String host
+        +getHost() String
+    }
+    ItemDeAudio <|-- Musica
+    ItemDeAudio <|-- Podcast
+```
+---
