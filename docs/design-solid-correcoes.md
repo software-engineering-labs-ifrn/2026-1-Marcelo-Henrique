@@ -33,6 +33,7 @@ classDiagram
 
 ### Código Corrigido
 A responsabilidade de manipulação e armazenamento dos dados foi isolada em uma nova classe chamada `MusicaRepository`.
+
 ```java
 public class MusicaRepository {
     private ArrayList<Musica> todasAsMusicas = new ArrayList<>();
@@ -70,12 +71,13 @@ classDiagram
     }
     MusicaControlador --> MusicaRepository
 ```
+
 ---
 
 ## 2. Violação do OCP (Open/Closed Principle)
 >*"Entidades de software devem estar abertas para extensão, mas fechadas para modificação."*
 
-Como o método `rodar()` da classe `TsfyUI` dependia de um switch/case para controlar o menu, qualquer nova opção exigia alterar esse arquivo, violando o Princípio do SOLID.
+O método `rodar()` da classe `TsfyUI` dependia de um switch/case para controlar o menu, exigindo alterações diretas no arquivo a cada nova opção inserida no sistema.
 
 ### Código Violado
 ```java
@@ -105,6 +107,7 @@ classDiagram
 
 ### Código Corrigido
 Utilização do padrão de projeto **Command**. Cada opção do menu torna-se uma classe isolada que estende uma interface comum.
+
 ```java
 public interface ComandoUI {
     void executar();
@@ -156,86 +159,17 @@ classDiagram
     TsfyUI --> ComandoUI
     ComandoUI <|.. ComandoCriarMusica
 ```
+
 ---
 
-## 3. Violação do DIP (Dependency Inversion Principle)
->*"Dependa de abstrações, não de implementações concretas."*
-
-A classe `FachadaFrontend` dependia fortemente de implementações concretas porque criava os objetos diretamente usando a palavra-chave `new` em seu construtor.
-
-### Código Violado
-```java
-public class FachadaFrontend {
-    private MusicaControlador controladorDeMusica;
-
-    public FachadaFrontend(){
-        this.controladorDeMusica = new MusicaControlador();
-    }
-}
-```
-
-#### Diagrama de classes violado
-```mermaid
-classDiagram
-    class FachadaFrontend {
-        -MusicaControlador controladorDeMusica
-        +FachadaFrontend()
-    }
-    class MusicaControlador {
-        +registrarMusica() boolean
-    }
-    FachadaFrontend --> MusicaControlador : instancia diretamente
-```
-
-### Código Corrigido
-A interface `IMusicaControlador` foi adicionada para atuar como uma abstração. Além disso, a fachada passou a adotar a Injeção de Dependência, recebendo a dependência instanciada via construtor.
-
-```java
-public interface IMusicaControlador {
-    boolean registrarMusica(String titulo, String compositor, String interprete, Double duracao);
-}
-
-public class MusicaControlador implements IMusicaControlador {
-    @Override
-    public boolean registrarMusica(String titulo, String compositor, String interprete, Double duracao) {
-        return true;
-    }
-}
-
-public class FachadaFrontend {
-    private IMusicaControlador controladorDeMusica;
-
-    public FachadaFrontend(IMusicaControlador controladorDeMusica) {
-        this.controladorDeMusica = controladorDeMusica;
-    }
-}
-```
-
-#### Diagrama de Classes Corrigido
-```mermaid
-classDiagram
-    class IMusicaControlador {
-        <<interface>>
-        +registrarMusica() boolean
-    }
-    class FachadaFrontend {
-        -IMusicaControlador controladorDeMusica
-        +FachadaFrontend(IMusicaControlador)
-    }
-    class MusicaControlador {
-        +registrarMusica() boolean
-    }
-    FachadaFrontend --> IMusicaControlador
-    IMusicaControlador <|.. MusicaControlador
-```
----
-
-## 4. Violação do LSP (Liskov Substitution Principle)
+## 3. Violação do LSP (Liskov Substitution Principle) SIMULADO
 >*"Classes derivadas devem poder ser substituídas por suas classes bases sem que o comportamento do programa seja corrompido."*
 
-Ao adicionar suporte para `Podcast`, a herança direta de `Musica` quebra o comportamento esperado do sistema, pois podcasts não possuem compositores e forçam o lançamento de exceções em métodos herdados.
+*(Nota: O projeto base não possui estruturas de herança. Este é um cenário simulado criado demonstrando como uma expansão incorreta violaria a regrade lsp).*
 
-### Código Violado
+Ao adicionar suporte para `Podcast`, uma herança direta de `Musica` quebraria o comportamento esperado, pois podcasts não possuem compositores, forçando o lançamento de exceções em métodos herdados.
+
+### Código Violado (Simulado)
 ```java
 public class Musica {
     private String compositor;
@@ -310,4 +244,165 @@ classDiagram
     ItemDeAudio <|-- Musica
     ItemDeAudio <|-- Podcast
 ```
+
 ---
+
+## 4. Violação do ISP (Interface Segregation Principle) SIMULADO
+>*"Muitas interfaces específicas são melhores do que uma interface única e geral."*
+
+*(Nota : O projeto não possui interface. Este é um cenário simulado demonstrando como a criação de um que no projeto violaria a regra).*
+
+Uma interface genérica `IControlador` forçaria a classe `UsuarioControlador` a implementar o método `editarDuracao()`, que não faz sentido para o escopo de um usuário.
+
+### Código Violado (Simulado)
+```java
+public interface IControlador {
+    void autenticar();
+    void editarDuracao();
+}
+
+public class UsuarioControlador implements IControlador {
+    @Override
+    public void autenticar() {
+    }
+
+    @Override
+    public void editarDuracao() {
+        throw new UnsupportedOperationException("Usuários não possuem duração");
+    }
+}
+```
+
+#### Diagrama de classes violado
+```mermaid
+classDiagram
+    class IControlador {
+        <<interface>>
+        +autenticar() void
+        +editarDuracao() void
+    }
+    class UsuarioControlador {
+        +autenticar() void
+        +editarDuracao() void
+    }
+    IControlador <|.. UsuarioControlador
+```
+
+### Código Corrigido
+A interface inchada foi segregada em interfaces menores e coesas (`IControladorAutenticacao` e `IControladorDeMidia`). Agora, cada controlador assina apenas os contratos que realmente utiliza.
+
+```java
+public interface IControladorAutenticacao {
+    void autenticar();
+}
+
+public interface IControladorDeMidia {
+    void editarDuracao();
+}
+
+public class UsuarioControlador implements IControladorAutenticacao {
+    @Override
+    public void autenticar() {
+    }
+}
+
+public class MusicaControlador implements IControladorDeMidia {
+    @Override
+    public void editarDuracao() {
+    }
+}
+```
+
+#### Diagrama de Classes Corrigido
+```mermaid
+classDiagram
+    class IControladorAutenticacao {
+        <<interface>>
+        +autenticar() void
+    }
+    class IControladorDeMidia {
+        <<interface>>
+        +editarDuracao() void
+    }
+    class UsuarioControlador {
+        +autenticar() void
+    }
+    class MusicaControlador {
+        +editarDuracao() void
+    }
+    IControladorAutenticacao <|.. UsuarioControlador
+    IControladorDeMidia <|.. MusicaControlador
+```
+
+---
+
+## 5. Violação do DIP (Dependency Inversion Principle)
+>*"Dependa de abstrações, não de implementações concretas."*
+
+A classe `FachadaFrontend` dependia fortemente de implementações concretas porque criava os objetos diretamente usando a palavra-chave `new` em seu construtor, gerando forte acoplamento.
+
+### Código Violado
+```java
+public class FachadaFrontend {
+    private MusicaControlador controladorDeMusica;
+
+    public FachadaFrontend(){
+        this.controladorDeMusica = new MusicaControlador();
+    }
+}
+```
+
+#### Diagrama de classes violado
+```mermaid
+classDiagram
+    class FachadaFrontend {
+        -MusicaControlador controladorDeMusica
+        +FachadaFrontend()
+    }
+    class MusicaControlador {
+        +registrarMusica() boolean
+    }
+    FachadaFrontend --> MusicaControlador : instancia diretamente
+```
+
+### Código Corrigido
+A interface `IMusicaControlador` foi adicionada para atuar como uma abstração. Além disso, a fachada passou a adotar a Injeção de Dependência, recebendo a dependência instanciada via construtor.
+
+```java
+public interface IMusicaControlador {
+    boolean registrarMusica(String titulo, String compositor, String interprete, Double duracao);
+}
+
+public class MusicaControlador implements IMusicaControlador {
+    @Override
+    public boolean registrarMusica(String titulo, String compositor, String interprete, Double duracao) {
+        return true;
+    }
+}
+
+public class FachadaFrontend {
+    private IMusicaControlador controladorDeMusica;
+
+    public FachadaFrontend(IMusicaControlador controladorDeMusica) {
+        this.controladorDeMusica = controladorDeMusica;
+    }
+}
+```
+
+#### Diagrama de Classes Corrigido
+```mermaid
+classDiagram
+    class IMusicaControlador {
+        <<interface>>
+        +registrarMusica() boolean
+    }
+    class FachadaFrontend {
+        -IMusicaControlador controladorDeMusica
+        +FachadaFrontend(IMusicaControlador)
+    }
+    class MusicaControlador {
+        +registrarMusica() boolean
+    }
+    FachadaFrontend --> IMusicaControlador
+    IMusicaControlador <|.. MusicaControlador
+```
