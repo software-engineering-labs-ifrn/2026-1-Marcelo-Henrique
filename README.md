@@ -1,6 +1,6 @@
-# TSFY
+# TSfy - Music Management System
 
-Uma aplicação interativa em modo texto (CLI) inspirada no Spotify, desenvolvida como projeto prático para a disciplina de Engenharia de Software. O sistema simula o gerenciamento de perfis de usuários, catálogos de músicas e organização de playlists personalizadas.
+O TSfy é uma aplicação interativa em modo texto (CLI) inspirada no Spotify, desenvolvida como projeto prático para a disciplina de Engenharia de Software. O sistema simula o gerenciamento de perfis de usuários, catálogos de músicas e organização de playlists personalizadas.
 
 ---
 
@@ -28,14 +28,24 @@ A arquitetura do software foi estruturada de forma modular, utilizando as seguin
 
 ---
 
-## Modelagem do Sistema
+## Instalação e Execução
+
+O projeto foi desenvolvido utilizando o Apache NetBeans e o gerenciador de pacotes Maven. Para executá-lo localmente, siga as instruções abaixo:
+
+1. Clone este repositório em sua máquina local
+2. Abra o NetBeans.
+3. Acesse `Arquivo` > `Abrir Projeto...`.
+4. Navegue até a pasta clonada `tsfy` e selecione-a.
+5. Clique no botão de Executar Projeto na barra superior
+
+## Documentação e Modelagem do Sistema
+
+Todos os artefatos de modelagem arquitetural e documentação técnica encontram-se organizados no diretório `/docs` deste repositório.
 
 ### Diagrama de Casos de Uso
-
 ![Diagrama de Casos de Uso](./docs/modelagem/casos_de_uso.png)
 
 ### Diagrama de Classes
-
 ![Diagrama de Classes](./docs/modelagem/diagrama_classes.png)
 
 ---
@@ -43,5 +53,3 @@ A arquitetura do software foi estruturada de forma modular, utilizando as seguin
 ## Equipe e Papéis no Desenvolvimento
 **Professor Daniel Aguiar da Silva Oliveira Carvalho** - Desenvolvimento Geral do Código
 **Marcelo Henrique** - Ajustes de Código
-
----
