@@ -23,6 +23,20 @@ public class TsfyUI {
 }
 ```
 
+#### Diagrama Violado
+```mermaid
+classDiagram
+    class TsfyUI {
+        +rodar() void
+    }
+    class MusicaControlador
+    class PlaylistControlador
+    class UsuarioControlador
+    TsfyUI --> MusicaControlador
+    TsfyUI --> PlaylistControlador
+    TsfyUI --> UsuarioControlador
+```
+
 ### A Solução
 O padrão Facade ja está implementado na classe `FachadaFrontend`. Ela centraliza todas as requisições da interface gráfica, funcionando como uma porta de entrada única que repassa os comandos aos controladores corretos. A UI conversa apenas com a Fachada.
 
@@ -45,6 +59,24 @@ public class FachadaFrontend {
 }
 ```
 
+#### Diagrama Corrigido
+```mermaid
+classDiagram
+    class TsfyUI
+    class FachadaFrontend {
+        +registrarMusica() boolean
+    }
+    class MusicaControlador
+    class PlaylistControlador
+    class UsuarioControlador
+    TsfyUI --> FachadaFrontend
+    FachadaFrontend --> MusicaControlador
+    FachadaFrontend --> PlaylistControlador
+    FachadaFrontend --> UsuarioControlador
+```
+
+---
+
 ## 2. Command
 >**Encapsular uma solicitação como um objeto, permitindo parametrizar clientes com filas, comandos e operações reversíveis.**
 
@@ -62,6 +94,17 @@ public class TsfyUI {
         }
     }
 }
+```
+
+#### Diagrama Violado
+```mermaid
+classDiagram
+    class TsfyUI {
+        +rodar() void
+        -criarNovoUsuario() void
+        -fazerLogin() void
+        -criarMusica() void
+    }
 ```
 
 ### A Solução
@@ -97,6 +140,25 @@ public class TsfyUI {
 }
 ```
 
+#### Diagrama Corrigido
+```mermaid
+classDiagram
+    class ComandoUI {
+        <<interface>>
+        +executar() void
+    }
+    class TsfyUI {
+        -Map~Integer, ComandoUI~ comandos
+        +rodar() void
+    }
+    class ComandoCriarMusica {
+        -FachadaFrontend fachada
+        +executar() void
+    }
+    TsfyUI --> ComandoUI
+    ComandoUI <|.. ComandoCriarMusica
+```
+
 ---
 
 ## 3. Singleton
@@ -110,6 +172,14 @@ Os dados do sistema (como a lista `todasAsMusicas` no `MusicaControlador`) ficam
 public class TsfyUI {
     private FachadaFrontend fachada = new FachadaFrontend(); 
 }
+```
+
+#### Diagrama Violado
+```mermaid
+classDiagram
+    class TsfyUI
+    class FachadaFrontend
+    TsfyUI ..> FachadaFrontend : cria nova instância e perde dados
 ```
 
 ### A Solução
@@ -138,6 +208,16 @@ public class TsfyUI {
 }
 ```
 
+#### Diagrama Corrigido
+```mermaid
+classDiagram
+    class FachadaFrontend {
+        -static FachadaFrontend instancia
+        -FachadaFrontend()
+        +static getInstance() FachadaFrontend
+    }
+```
+
 ---
 
 ## 4. Builder
@@ -155,6 +235,18 @@ public class MusicaControlador {
         return true;
     }
 }
+```
+
+#### Diagrama Violado
+```mermaid
+classDiagram
+    class Musica {
+        +Musica(String, String, String, double)
+    }
+    class MusicaControlador {
+        +registrarMusica() boolean
+    }
+    MusicaControlador ..> Musica : instancia construtor longo
 ```
 
 ### A Solução
@@ -191,4 +283,20 @@ public class MusicaControlador {
         return true;
     }
 }
+```
+
+#### Diagrama Corrigido
+```mermaid
+classDiagram
+    class MusicaBuilder {
+        +comTitulo() MusicaBuilder
+        +comCompositor() MusicaBuilder
+        +build() Musica
+    }
+    class MusicaControlador {
+        +registrarMusica() boolean
+    }
+    class Musica
+    MusicaControlador --> MusicaBuilder
+    MusicaBuilder ..> Musica : constrói
 ```
